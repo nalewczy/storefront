@@ -7,11 +7,14 @@
 // Dropin Tools
 import { events } from '@dropins/tools/event-bus.js';
 import { initializers } from '@dropins/tools/initializer.js';
+import { h } from '@dropins/tools/preact.js';
+
 
 // Dropin Components
 import {
   Button,
   Header,
+  IllustratedMessage,
   ProgressSpinner,
   provider as UI,
 } from '@dropins/tools/components.js';
@@ -337,6 +340,21 @@ export default async function decorate(block) {
           [PaymentMethodCode.VAULT]: {
             enabled: false,
           },
+          "PARTNER-PAY": {
+            render: (ctx) => {
+              const $content = document.createElement('div');
+              UI.render(IllustratedMessage,
+                {
+                  className: "checkout__payment-method-partners-payment",
+                  heading: "PARTNER PAY",
+                  headingLevel: 3,
+                  variant: "secondary",
+                  message: h("p", { className: "checkout__payment-method-partners-payment--message", children: "This is a test payment method for demonstration purposes only" })
+                }
+              )($content);
+              ctx.replaceHTML($content);
+            },
+          },
         },
       },
     })($paymentMethods),
@@ -453,6 +471,35 @@ export default async function decorate(block) {
             // Submit Payment Services credit card form
             await creditCardFormRef.current.submit();
           }
+
+          // Add payment session creation for PARTNER-PAY
+          if (code === "PARTNER-PAY") {
+            // TODO Paste your create-session URL between the quotes
+            const PAYMENT_SESSION_API = 'https://1899289-pdbcn2044-stage.adobeioruntime.net/api/v1/web/payment-method/create-session';
+            try {
+              const response = await fetch(PAYMENT_SESSION_API);
+              const responseData = await response.json();
+              const paymentSessionId = responseData?.message?.paymentSessionId;
+
+              if (!paymentSessionId) {
+                throw new Error('Unable to process payment at this time. Please try again later.');
+              }
+
+              await checkoutApi.setPaymentMethod({
+                code: 'PARTNER-PAY',
+                additional_data: [
+                  {
+                    key: 'paymentSessionId',
+                    value: paymentSessionId,
+                  },
+                ],
+              });
+            } catch (error) {
+              console.error('Payment session creation failed:', error);
+              throw new Error('Payment processing failed. Please try again.');
+            }
+          }
+
           // Place order
           await orderApi.placeOrder(cartId);
         } catch (error) {

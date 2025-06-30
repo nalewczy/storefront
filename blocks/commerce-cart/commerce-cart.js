@@ -80,6 +80,55 @@ export default async function decorate(block) {
       attributesToHide: hideAttributes.split(',').map((attr) => attr.trim().toLowerCase()),
       enableUpdateItemQuantity: enableUpdateItemQuantity === 'true',
       enableRemoveItem: enableRemoveItem === 'true',
+      slots: {
+        ProductAttributes: (ctx) => {
+          const productAttributes = document.createElement('div');
+          productAttributes.className = 'product-attributes';
+
+          // Create categories section
+          if (ctx.item && ctx.item.categories && ctx.item.categories.length > 0) {
+            const categoryIcons = {
+              'All': '🌍',
+              'Office': '📁',
+              'Apparel': '👕',
+              'Bags': '🎒',
+              'Collections': '🖼️',
+              'Lifestyle': '🌟',
+              'Tech': '💻',
+              'Gifts': '🎁',
+              'Travel': '✈️'
+            };
+
+            const categoryElements = ctx.item.categories.map(category => {
+              const categoryName = category;
+              const categoryIcon = categoryIcons[categoryName] || '🌍';
+              return `<div class="product-attribute-category">${categoryIcon} ${categoryName}</div>`;
+            });
+
+            productAttributes.innerHTML = categoryElements.join('');
+
+            // Add some basic styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .product-attributes {
+                  padding: 10px;
+                  margin: 10px 0;
+                }
+                .product-attribute-category {
+                  display: inline-block;
+                  margin: 5px;
+                  padding: 5px 10px;
+                  background: #f5f5f5;
+                  border-radius: 15px;
+                  font-size: 0.9em;
+                }
+            `;
+            productAttributes.appendChild(style);
+          }
+
+          ctx.appendChild(productAttributes);
+        },
+      }
     })($list),
 
     // Order Summary
